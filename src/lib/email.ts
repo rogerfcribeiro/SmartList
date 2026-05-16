@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendPasswordResetEmail({
   to,
   name,
@@ -11,6 +9,7 @@ export async function sendPasswordResetEmail({
   name: string;
   resetUrl: string;
 }) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const from = process.env.EMAIL_FROM ?? 'SmartList <onboarding@resend.dev>';
   await resend.emails.send({
     from,
