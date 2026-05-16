@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Force | Select-Object Name, @{Name=\"Type\"; Expression={if\\($_.PSIsContainer\\){\"Directory\"}else{\"File\"}}} | Format-Table -AutoSize)",
+      "PowerShell(ls -Recurse \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" 2>$null | ForEach-Object { $_.FullName })",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)",
+      "Read(//c/Users/roger/Documents/_projetos/_claude/**)",
+      "Bash(npx create-next-app@latest smartlist-temp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)",
+      "Bash(dir \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" /a)",
+      "Bash(npx shadcn@latest init --yes --defaults)",
+      "Bash(npx shadcn@latest add input label dialog drawer alert-dialog card progress form select checkbox dropdown-menu sonner --yes)",
+      "Bash(npx shadcn@latest add form --yes)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\smartlist-temp\")",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Recurse -Directory | ForEach-Object { $_.FullName.Substring\\(\"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\\\\\".Length\\) } | Sort-Object)"
+    ]
+  }
+}
