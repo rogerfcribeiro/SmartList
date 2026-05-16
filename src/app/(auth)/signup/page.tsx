@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 import { z } from "zod";
 import { signupSchema } from "@/modules/shared/validators";
 import { Button } from "@/components/ui/button";
@@ -46,13 +45,13 @@ export default function SignupPage() {
       return;
     }
 
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
+    const loginRes = await fetch("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: data.email, password: data.password }),
     });
 
-    if (result?.error) {
+    if (!loginRes.ok) {
       router.push("/login");
       return;
     }

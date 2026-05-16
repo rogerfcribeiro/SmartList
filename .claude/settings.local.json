@@ -27,7 +27,8 @@
       "Bash(docker --version)",
       "Bash(docker info *)",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Force | Where-Object { !$_.Name.StartsWith\\(\"node_modules\"\\) } | Select-Object Name, PSIsContainer)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(npm ls *)"
     ]
   }
 }
