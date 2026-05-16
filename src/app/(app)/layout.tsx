@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { AppHeader } from "@/components/feature/app-header";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+  if (!session) redirect("/login");
+
   return (
     <>
       <AppHeader />
