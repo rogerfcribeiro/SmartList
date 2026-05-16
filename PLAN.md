@@ -1,6 +1,6 @@
 # SmartList — Plano de Implementação
 
-**Status:** Fase 8 concluída · **Workflow:** Pausar a cada fase para validação
+**Status:** Fase 9 em andamento · **Workflow:** Pausar a cada fase para validação
 
 Referências: [`SmartList_PRD_v1_2.md`](./SmartList_PRD_v1_2.md) · [`SmartList_SPEC_v1.0.md`](./SmartList_SPEC_v1.0.md) · [`CLAUDE.md`](./CLAUDE.md)
 
@@ -171,8 +171,17 @@ Referências: [`SmartList_PRD_v1_2.md`](./SmartList_PRD_v1_2.md) · [`SmartList_
 ### Fase 9 — CI/CD & Deploy
 **Entrega:** Pipeline GitHub Actions + deploy Vercel + smoke test em produção.
 
-- [ ] **TASK-043** Workflow `.github/workflows/ci.yml` (5 gates: lint, typecheck, test, test:int, build)
+- [x] **TASK-043** Workflow `.github/workflows/ci.yml` (5 gates: lint, typecheck, test, test:int, build)
 - [ ] **TASK-044** Deploy Vercel (preview por PR, prod na main, env vars configuradas, região gru1)
+  - [x] `vercel.json` criado com `regions: ["gru1"]`
+  - [x] Jobs `deploy-preview` e `deploy-production` no `ci.yml` (deploy só ocorre após todos os 5 gates passarem)
+  - [ ] **Manual:** Criar projeto no [vercel.com](https://vercel.com) e rodar `vercel link` localmente
+  - [ ] **Manual:** Adicionar 3 secrets no GitHub repo → Settings → Secrets → Actions:
+    - `VERCEL_TOKEN` — criar em vercel.com/account/tokens
+    - `VERCEL_ORG_ID` — do arquivo `.vercel/project.json` após `vercel link`
+    - `VERCEL_PROJECT_ID` — do arquivo `.vercel/project.json` após `vercel link`
+  - [ ] **Manual:** Configurar as 8 env vars no painel Vercel (Settings → Environment Variables) com os valores reais de produção (Neon, Resend, Upstash, etc.)
+  - [ ] **Manual:** Desativar deployments automáticos do Vercel GitHub App (opcional, para que só o CI faça deploy)
 - [ ] **TASK-045** Smoke test pós-deploy validando CS-01 → CS-08 em celular real
 
 **Critério de saída:** Pipeline verde na main, LCP < 2s em 4G, todos os 8 CS verificados.
