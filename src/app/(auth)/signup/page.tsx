@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { signupSchema } from "@/modules/shared/validators";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 type SignupForm = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -50,11 +52,11 @@ export default function SignupPage() {
     });
 
     if (!loginRes.ok) {
-      window.location.href = "/login";
+      router.push("/login");
       return;
     }
 
-    window.location.href = "/lists";
+    router.push("/lists");
   }
 
   return (

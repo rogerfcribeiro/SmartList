@@ -36,7 +36,7 @@ function LoginForm() {
     });
 
     if (res.ok) {
-      window.location.href = "/lists";
+      router.push("/lists");
       return;
     }
 
