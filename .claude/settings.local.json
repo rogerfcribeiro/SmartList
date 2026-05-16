@@ -18,7 +18,14 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Sort-Object)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Recurse -Directory | ForEach-Object { $_.FullName.Substring\\(\"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\\\\\".Length\\) } | Sort-Object)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Recurse -Directory | ForEach-Object { $_.FullName.Substring\\(\"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\\\\\".Length\\) } | Sort-Object)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(npx vitest *)",
+      "Bash(npx playwright *)",
+      "Bash(npx tsc *)",
+      "Bash(docker --version)",
+      "Bash(docker info *)"
     ]
   }
 }

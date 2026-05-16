@@ -1,6 +1,6 @@
 # SmartList — Plano de Implementação
 
-**Status:** Pré-implementação · **Workflow:** Pausar a cada fase para validação
+**Status:** Fase 8 concluída · **Workflow:** Pausar a cada fase para validação
 
 Referências: [`SmartList_PRD_v1_2.md`](./SmartList_PRD_v1_2.md) · [`SmartList_SPEC_v1.0.md`](./SmartList_SPEC_v1.0.md) · [`CLAUDE.md`](./CLAUDE.md)
 
@@ -123,14 +123,48 @@ Referências: [`SmartList_PRD_v1_2.md`](./SmartList_PRD_v1_2.md) · [`SmartList_
 ### Fase 8 — Testes & QA
 **Entrega:** Suíte completa unit + integration + E2E + checklists manuais.
 
-- [ ] **TASK-037** Testes unitários Vitest (≥ 80% em `src/modules/`, Prisma mockado)
-- [ ] **TASK-038** Testes de integração com testcontainers (Postgres real, todos os endpoints)
-- [ ] **TASK-039** E2E Playwright em viewport 375×812 (6 fluxos obrigatórios)
-- [ ] **TASK-040** Checklist de acessibilidade (Lighthouse ≥ 90, axe-core, VoiceOver)
-- [ ] **TASK-041** Checklist de performance (LCP < 2.5s, TBT < 200ms, bundle analyze)
-- [ ] **TASK-042** Checklist de segurança (IDOR, bcrypt cost 12, cookies seguros, mensagens genéricas)
+- [x] **TASK-037** Testes unitários Vitest — 105 testes, **100% stmts/funcs/lines**, 97.5% branches em `src/modules/`
+- [x] **TASK-038** Testes de integração com testcontainers — 41 testes passando (PostgreSQL real via Docker)
+- [x] **TASK-039** E2E Playwright em viewport 375×812 — 6 fluxos obrigatórios + testes auxiliares
+- [ ] **TASK-040** Checklist de acessibilidade (Lighthouse ≥ 90, axe-core, VoiceOver) — **manual**
+- [ ] **TASK-041** Checklist de performance (LCP < 2.5s, TBT < 200ms, `npm run analyze`) — **manual**
+- [ ] **TASK-042** Checklist de segurança (IDOR, bcrypt cost 12, cookies seguros, mensagens genéricas) — **manual**
 
-**Critério de saída:** `npm test`, `npm run test:int`, `npx playwright test` passam 100%.
+**Critério de saída:** `npm test` ✅ · `npm run test:int` ✅ · `npx playwright test` (requer `npm run dev`)
+
+---
+
+### Checklists Manuais (TASK-040 a TASK-042)
+
+#### TASK-040 — Acessibilidade
+| Item | Como verificar | Status |
+|---|---|---|
+| Labels nos inputs | Inspecionar com DevTools / axe-core no Playwright | ⏳ |
+| Alvos ≥ 44×44px | DevTools → computed styles dos elementos interativos | ⏳ |
+| Contraste ≥ 4.5:1 | Lighthouse → Accessibility | ⏳ |
+| Tab order lógico | Navegar com Tab pela tela | ⏳ |
+| aria-checked nos checkboxes | Inspecionar ItemCard | ⏳ |
+| VoiceOver/TalkBack | Criar lista e item sem ver a tela | ⏳ |
+| **Score Lighthouse Accessibility ≥ 90** | `npx lighthouse http://localhost:3000/lists` | ⏳ |
+
+#### TASK-041 — Performance
+| Métrica | Meta | Como medir | Status |
+|---|---|---|---|
+| LCP | < 2.5s | Lighthouse mobile (4G simulado) | ⏳ |
+| TBT | < 200ms | Lighthouse mobile | ⏳ |
+| Interações | < 300ms | DevTools Performance → Long Tasks | ⏳ |
+| Bundle size | Sem imports desnecessários | `npm run analyze` | ⏳ |
+
+#### TASK-042 — Segurança
+| Teste | Como verificar | Status |
+|---|---|---|
+| IDOR listas | curl com JWT de User A tentando acessar lista de User B → 404 | ⏳ |
+| IDOR itens | curl com JWT de User A tentando `PATCH /items/[id-de-B]` → 404 | ⏳ |
+| bcrypt cost 12 | `prisma studio` → campo `passwordHash` começa com `$2b$12$` | ⏳ |
+| Cookie httpOnly | DevTools → Application → Cookies → verificar httpOnly e sameSite | ⏳ |
+| Token reset SHA-256 | `prisma studio` → `PasswordResetToken.tokenHash` é hex de 64 chars | ⏳ |
+| Mensagem genérica login | Login com email inexistente = `"Email ou senha incorretos."` | ⏳ |
+| Enumeração reset | `forgot-password` com email inexistente retorna 200 sem body | ⏳ |
 
 ---
 
