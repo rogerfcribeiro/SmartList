@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PencilIcon } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CATEGORIES, type CategoryKey } from "@/lib/categories";
+import { PencilIcon, Trash2Icon, GripVerticalIcon, CheckIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { CategoryKey } from "@/lib/categories";
 
 export type Item = {
   id: string;
@@ -12,6 +12,7 @@ export type Item = {
   quantity: number;
   category: CategoryKey;
   checked: boolean;
+  order: number;
   createdAt: string;
 };
 
@@ -20,13 +21,13 @@ type Props = {
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  dragHandleListeners?: Record<string, unknown>;
 };
 
-const SWIPE_THRESHOLD = 55;
-const DELETE_WIDTH = 80;
-const LONG_PRESS_MS = 500;
+const SWIPE_THRESHOLD = 60;
+const MAX_SWIPE = 80;
 
-export function ItemCard({ item, onToggle, onEdit, onDelete }: Props) {
+export function ItemCard({ item, onToggle, onEdit, onDelete, dragHandleListeners }: Props) {
   const [offset, setOffset] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
 
@@ -34,37 +35,19 @@ export function ItemCard({ item, onToggle, onEdit, onDelete }: Props) {
   const startY = useRef(0);
   const isDragging = useRef(false);
   const gestureHandled = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearLongPress = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    // If already swiped open, close on next tap
     if (offset !== 0) {
       setTransitioning(true);
       setOffset(0);
+      gestureHandled.current = true;
       return;
     }
-
     startX.current = e.clientX;
     startY.current = e.clientY;
     isDragging.current = false;
     gestureHandled.current = false;
-
     e.currentTarget.setPointerCapture(e.pointerId);
-
-    longPressTimer.current = setTimeout(() => {
-      longPressTimer.current = null;
-      if (!isDragging.current) {
-        gestureHandled.current = true;
-        onEdit();
-      }
-    }, LONG_PRESS_MS);
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -73,70 +56,43 @@ export function ItemCard({ item, onToggle, onEdit, onDelete }: Props) {
 
     if (!isDragging.current && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
       isDragging.current = true;
-      clearLongPress();
     }
-
     if (!isDragging.current) return;
-    // Ignore if primarily vertical (let scroll handle it)
     if (Math.abs(dy) > Math.abs(dx) + 5) return;
 
-    const newOffset = Math.max(-DELETE_WIDTH, Math.min(0, dx));
     setTransitioning(false);
-    setOffset(newOffset);
+    setOffset(Math.max(-MAX_SWIPE, Math.min(0, dx)));
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    clearLongPress();
-
     if (gestureHandled.current) return;
 
     const dx = e.clientX - startX.current;
-
     setTransitioning(true);
+    setOffset(0);
 
-    if (!isDragging.current) {
-      // Plain tap → toggle
-      setOffset(0);
-      onToggle();
-      return;
-    }
-
+    if (!isDragging.current) return;
     isDragging.current = false;
 
     if (dx < -SWIPE_THRESHOLD) {
-      setOffset(-DELETE_WIDTH);
-    } else {
-      setOffset(0);
+      onToggle();
     }
   }
 
   function handlePointerCancel() {
-    clearLongPress();
     isDragging.current = false;
     setTransitioning(true);
     setOffset(0);
   }
 
-  const category = CATEGORIES[item.category] ?? CATEGORIES.OUTROS;
-
   return (
     <div className="relative overflow-hidden rounded-xl">
-      {/* Delete reveal zone */}
+      {/* Toggle reveal zone */}
       <div
-        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center rounded-r-xl bg-destructive"
+        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center rounded-r-xl bg-green-500"
         aria-hidden="true"
       >
-        <button
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => {
-            setTransitioning(true);
-            setOffset(0);
-            onDelete();
-          }}
-          className="text-xs font-semibold text-white"
-        >
-          Excluir
-        </button>
+        <CheckIcon className="size-5 text-white" />
       </div>
 
       {/* Card */}
@@ -146,24 +102,31 @@ export function ItemCard({ item, onToggle, onEdit, onDelete }: Props) {
           transition: transitioning ? "transform 200ms ease" : "none",
         }}
         className={cn(
-          "relative flex min-h-[60px] items-center gap-3 rounded-xl border bg-card px-4 py-3",
-          "cursor-pointer select-none touch-pan-y",
+          "relative flex min-h-[60px] items-center gap-2 rounded-xl border bg-card px-3 py-3",
+          "select-none touch-pan-y",
         )}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onContextMenu={(e) => e.preventDefault()}
-        role="checkbox"
-        aria-checked={item.checked}
-        aria-label={item.name}
       >
-        <Checkbox
-          checked={item.checked}
-          className="pointer-events-none shrink-0"
-          aria-hidden="true"
-        />
+        {/* Drag handle */}
+        {dragHandleListeners && (
+          <button
+            {...(dragHandleListeners as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              (dragHandleListeners.onPointerDown as React.PointerEventHandler<HTMLButtonElement>)?.(e);
+            }}
+            className="shrink-0 touch-none cursor-grab text-muted-foreground/40 active:cursor-grabbing hover:text-muted-foreground"
+            aria-label="Arrastar para reordenar"
+          >
+            <GripVerticalIcon className="size-4" />
+          </button>
+        )}
 
+        {/* Name */}
         <div className="min-w-0 flex-1">
           <p
             className={cn(
@@ -172,24 +135,36 @@ export function ItemCard({ item, onToggle, onEdit, onDelete }: Props) {
             )}
           >
             {item.name}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {category.icon} {category.label}
-            {item.quantity > 1 && <> · {item.quantity} unid.</>}
+            {item.quantity > 1 && (
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                × {item.quantity}
+              </span>
+            )}
           </p>
         </div>
 
-        <button
+        {/* Edit + Delete */}
+        <div
+          className="flex shrink-0 items-center"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label={`Editar ${item.name}`}
         >
-          <PencilIcon className="size-3.5" />
-        </button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onEdit()}
+            aria-label={`Editar ${item.name}`}
+          >
+            <PencilIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onDelete()}
+            aria-label={`Excluir ${item.name}`}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
       </div>
     </div>
   );

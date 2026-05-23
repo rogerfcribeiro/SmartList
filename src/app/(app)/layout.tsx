@@ -9,7 +9,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <AppHeader />
+      <AppHeader name={session.user?.name} email={session.user?.email} />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
         {children}
       </main>

@@ -5,7 +5,7 @@ export const itemRepo = {
   findAllByList(listId: string) {
     return prisma.item.findMany({
       where: { listId },
-      orderBy: [{ checked: 'asc' }, { createdAt: 'asc' }],
+      orderBy: [{ checked: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }],
     });
   },
 
@@ -23,7 +23,7 @@ export const itemRepo = {
 
   update(
     id: string,
-    data: Partial<{ name: string; quantity: number; category: Category; checked: boolean }>,
+    data: Partial<{ name: string; quantity: number; category: Category; checked: boolean; order: number }>,
   ) {
     return prisma.item.update({ where: { id }, data });
   },

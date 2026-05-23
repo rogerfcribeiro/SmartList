@@ -8,6 +8,20 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ItemCard, type Item } from "@/components/feature/items/item-card";
 import { ItemDrawer } from "@/components/feature/items/item-drawer";
 import type { CategoryKey } from "@/lib/categories";
@@ -20,6 +34,7 @@ type ItemUpdateData = {
   quantity?: number;
   category?: CategoryKey;
   checked?: boolean;
+  order?: number;
 };
 
 async function fetchList(id: string): Promise<ListDetail> {
@@ -73,8 +88,45 @@ function makeOptimisticItem(name: string): Item {
     quantity: 1,
     category: "OUTROS",
     checked: false,
+    order: 0,
     createdAt: new Date().toISOString(),
   };
+}
+
+// ─── Sortable item card ───────────────────────────────────────────────────────
+
+type SortableItemCardProps = {
+  item: Item;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+};
+
+function SortableItemCard({ item, onToggle, onEdit, onDelete }: SortableItemCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        position: "relative",
+        zIndex: isDragging ? 10 : "auto",
+      }}
+    >
+      <ItemCard
+        item={item}
+        onToggle={onToggle}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        dragHandleListeners={listeners}
+      />
+    </div>
+  );
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -86,6 +138,7 @@ export default function ListDetailPage() {
 
   const [inputValue, setInputValue] = useState("");
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [localPendingIds, setLocalPendingIds] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // pending deletes: itemId → timeout handle
@@ -108,11 +161,25 @@ export default function ListDetailPage() {
     queryFn: () => fetchItems(id),
   });
 
+  // Sync localPendingIds from server data — preserve user reorder, drop removed, append new
+  useEffect(() => {
+    const serverPendingIds = rawItems.filter((i) => !i.checked).map((i) => i.id);
+    setLocalPendingIds((prev) => {
+      const serverSet = new Set(serverPendingIds);
+      const prevSet = new Set(prev);
+      const kept = prev.filter((id) => serverSet.has(id));
+      const added = serverPendingIds.filter((id) => !prevSet.has(id));
+      return [...kept, ...added];
+    });
+  }, [rawItems]);
+
   // Hide items that are in the undo-delete window
   const items = rawItems.filter((i) => !deletedIds.has(i.id));
-  const pendingItems = items.filter((i) => !i.checked);
+  const orderedPendingItems = localPendingIds
+    .map((id) => items.find((i) => i.id === id))
+    .filter((i): i is Item => i !== undefined && !i.checked);
   const checkedItems = items.filter((i) => i.checked);
-  const totalItems = items.length;
+  const totalItems = orderedPendingItems.length + checkedItems.length;
   const completedCount = checkedItems.length;
   const progress = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
   const isAtLimit = rawItems.length >= ITEM_LIMIT;
@@ -250,6 +317,27 @@ export default function ListDetailPage() {
     pendingDeletes.current.set(item.id, timer);
   }
 
+  // ── Reorder ───────────────────────────────────────────────────────────────
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIdx = localPendingIds.indexOf(active.id as string);
+    const newIdx = localPendingIds.indexOf(over.id as string);
+    if (oldIdx === -1 || newIdx === -1) return;
+
+    const newIds = arrayMove(localPendingIds, oldIdx, newIdx);
+    setLocalPendingIds(newIds);
+
+    // Normalize all orders to match new positions
+    newIds.forEach((itemId, idx) => {
+      apiUpdateItem(itemId, { order: idx }).catch(() => {});
+    });
+  }
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleAddItem() {
@@ -342,7 +430,7 @@ export default function ListDetailPage() {
             />
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : totalItems === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <PackageOpenIcon className="mb-3 size-10 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">
@@ -352,22 +440,29 @@ export default function ListDetailPage() {
       ) : (
         <div className="space-y-4">
           {/* Pending */}
-          {pendingItems.length > 0 && (
+          {orderedPendingItems.length > 0 && (
             <section aria-label="Pendentes" className="space-y-2">
               <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Pendentes ({pendingItems.length})
+                Pendentes ({orderedPendingItems.length})
               </h2>
-              {pendingItems.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  onToggle={() =>
-                    toggleMutation.mutate({ itemId: item.id, checked: true })
-                  }
-                  onEdit={() => setEditingItem(item)}
-                  onDelete={() => handleDeleteItem(item)}
-                />
-              ))}
+              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <SortableContext
+                  items={localPendingIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {orderedPendingItems.map((item) => (
+                    <SortableItemCard
+                      key={item.id}
+                      item={item}
+                      onToggle={() =>
+                        toggleMutation.mutate({ itemId: item.id, checked: true })
+                      }
+                      onEdit={() => setEditingItem(item)}
+                      onDelete={() => handleDeleteItem(item)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </section>
           )}
 

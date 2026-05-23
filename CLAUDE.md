@@ -2,6 +2,72 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Diretrizes comportamentais para reduzir erros comuns de LLMs em código. Mescle com instruções específicas do projeto conforme necessário.
+
+**Tradeoff:** Estas diretrizes priorizam cautela em vez de velocidade. Para tarefas triviais, use o bom senso.
+
+## 1. Pensar Antes de Codificar
+
+**Não assuma. Não esconda confusão. Exponha os tradeoffs.**
+
+Antes de implementar:
+- Declare suas suposições explicitamente. Se incerto, pergunte.
+- Se houver múltiplas interpretações, apresente-as — não escolha silenciosamente.
+- Se existir uma abordagem mais simples, diga. Questione quando for pertinente.
+- Se algo não estiver claro, pare. Nomeie o que está confuso. Pergunte.
+
+## 2. Simplicidade em Primeiro Lugar
+
+**Código mínimo que resolve o problema. Nada especulativo.**
+
+- Sem funcionalidades além do que foi pedido.
+- Sem abstrações para código de uso único.
+- Sem "flexibilidade" ou "configurabilidade" que não foram solicitadas.
+- Sem tratamento de erros para cenários impossíveis.
+- Se você escreveu 200 linhas e poderia ser 50, reescreva.
+
+Pergunte a si mesmo: "Um engenheiro sênior diria que isso está complicado demais?" Se sim, simplifique.
+
+## 3. Mudanças Cirúrgicas
+
+**Toque apenas o necessário. Limpe apenas a sua própria bagunça.**
+
+Ao editar código existente:
+- Não "melhore" código adjacente, comentários ou formatação.
+- Não refatore coisas que não estão quebradas.
+- Siga o estilo existente, mesmo que você faria diferente.
+- Se notar código morto não relacionado, mencione — não delete.
+
+Quando suas mudanças criarem órfãos:
+- Remova imports/variáveis/funções que AS SUAS mudanças tornaram desnecessários.
+- Não remova código morto preexistente sem ser solicitado.
+
+O teste: Cada linha alterada deve se justificar diretamente pela solicitação do usuário.
+
+## 4. Execução Orientada a Objetivos
+
+**Defina critérios de sucesso. Itere até verificar.**
+
+Transforme tarefas em objetivos verificáveis:
+- "Adicionar validação" → "Escrever testes para entradas inválidas, depois fazê-los passar"
+- "Corrigir o bug" → "Escrever um teste que reproduza o bug, depois fazê-lo passar"
+- "Refatorar X" → "Garantir que os testes passem antes e depois"
+
+Para tarefas com múltiplos passos, declare um plano breve:
+```
+1. [Passo] → verificar: [checagem]
+2. [Passo] → verificar: [checagem]
+3. [Passo] → verificar: [checagem]
+```
+
+Critérios de sucesso fortes permitem iterar de forma independente. Critérios fracos ("faça funcionar") exigem clarificação constante.
+
+---
+
+**Estas diretrizes estão funcionando se:** houver menos mudanças desnecessárias nos diffs, menos reescritas por complicação excessiva, e perguntas de esclarecimento vierem antes da implementação, não após os erros.
+
+---
+
 ## Project Status
 
 Pre-implementation. Only `SmartList_PRD_v1_2.md` and `SmartList_SPEC_v1.0.md` exist. Code must be built from scratch following those documents. The SPEC (`SmartList_SPEC_v1.0.md`) contains 45 tasks in 9 phases with exact acceptance criteria — use it as the implementation reference, not the PRD.
@@ -118,3 +184,19 @@ Follow the phases in `SmartList_SPEC_v1.0.md` in order (Phase 0 → 9). Do not s
 - **Unit tests** (Vitest): mock Prisma, test use-cases and validators. Target ≥ 80% coverage of `src/modules/`.
 - **Integration tests** (Vitest + testcontainers): real PostgreSQL, cover all API endpoints with at least one happy + one unhappy path each.
 - **E2E** (Playwright): viewport locked to 375×812px (iPhone X). Six required flows listed in TASK-039.
+
+---
+
+## Evolução das Regras do Projeto
+
+Sempre que uma decisão de padrão, arquitetura ou convenção for tomada e aprovada durante o desenvolvimento, adicione automaticamente uma nova regra nesta seção. Isso inclui:
+
+- Padrões de nomenclatura adotados
+- Estrutura de pastas definida
+- Bibliotecas escolhidas para determinada função
+- Convenções de código (docstrings, tipos, testes, etc.)
+- Decisões de arquitetura relevantes
+
+**Nunca remova regras existentes sem aprovação explícita do usuário.**
+
+
