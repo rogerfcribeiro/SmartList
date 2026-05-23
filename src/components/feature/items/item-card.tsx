@@ -1,10 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Trash2Icon, CheckIcon } from "lucide-react";
+import { Trash2Icon, CheckIcon, GripVerticalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CategoryKey } from "@/lib/categories";
-import type { DraggableSyntheticListeners } from "@dnd-kit/core";
 
 export type Item = {
   id: string;
@@ -20,26 +19,19 @@ type Props = {
   item: Item;
   onToggle: () => void;
   onDelete: () => void;
-  dragListeners?: DraggableSyntheticListeners;
-  dragAttributes?: Record<string, unknown>;
   dragOverlay?: boolean;
 };
 
 const SWIPE_THRESHOLD = 64;
 const MAX_SWIPE = 96;
-const LONG_PRESS_MS = 250;
+const LONG_PRESS_MS = 250;       // must match dnd-kit sensor delay
+const LONG_PRESS_FEEDBACK_MS = 150; // visual feedback starts slightly before activation
 const MOVE_TOLERANCE = 5;
 
-export function ItemCard({
-  item,
-  onToggle,
-  onDelete,
-  dragListeners,
-  dragAttributes,
-  dragOverlay = false,
-}: Props) {
+export function ItemCard({ item, onToggle, onDelete, dragOverlay = false }: Props) {
   const [offset, setOffset] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
+  const [longPressing, setLongPressing] = useState(false);
 
   const startX = useRef(0);
   const startY = useRef(0);
@@ -47,20 +39,23 @@ export function ItemCard({
   const gestureHandled = useRef(false);
   const isDragGesture = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function clearLongPress() {
+  function clearTimers() {
     if (longPressTimer.current !== null) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+    if (feedbackTimer.current !== null) {
+      clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = null;
+    }
+    setLongPressing(false);
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    // Forward to dnd-kit sensor so it can start its long-press activation timer.
-    // We do NOT setPointerCapture here — that would prevent dnd-kit from managing drag.
-    type ListenerFn = (e: React.PointerEvent<HTMLDivElement>) => void;
-    (dragListeners as Record<string, ListenerFn> | undefined)?.onPointerDown?.(e);
-
+    // dnd-kit's onPointerDown is on the outer wrapper and fires via event bubbling.
+    // We only handle swipe + long-press feedback here.
     if (offset !== 0) {
       setTransitioning(true);
       setOffset(0);
@@ -74,8 +69,16 @@ export function ItemCard({
     gestureHandled.current = false;
     isDragGesture.current = false;
 
+    // Visual feedback: card "lifts" slightly before drag activates
+    feedbackTimer.current = setTimeout(() => {
+      setLongPressing(true);
+      feedbackTimer.current = null;
+    }, LONG_PRESS_FEEDBACK_MS);
+
+    // Sync with dnd-kit sensor delay — suppress tap/swipe after this fires
     longPressTimer.current = setTimeout(() => {
       isDragGesture.current = true;
+      setLongPressing(false); // dnd-kit DragOverlay takes over visually
       longPressTimer.current = null;
     }, LONG_PRESS_MS);
   }
@@ -88,11 +91,11 @@ export function ItemCard({
 
     if (!isMoving.current && (Math.abs(dx) > MOVE_TOLERANCE || Math.abs(dy) > MOVE_TOLERANCE)) {
       isMoving.current = true;
-      clearLongPress();
+      clearTimers(); // movement detected — cancel long-press
 
-      if (Math.abs(dy) >= Math.abs(dx)) return; // Vertical intent — let browser scroll
+      if (Math.abs(dy) >= Math.abs(dx)) return; // vertical intent — let browser scroll
 
-      // Horizontal swipe confirmed — capture pointer so we track the rest of the gesture
+      // Horizontal swipe confirmed — capture pointer for reliable tracking
       e.currentTarget.setPointerCapture(e.pointerId);
     }
 
@@ -104,7 +107,7 @@ export function ItemCard({
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    clearLongPress();
+    clearTimers();
 
     if (gestureHandled.current) return;
 
@@ -118,7 +121,7 @@ export function ItemCard({
       return;
     }
 
-    if (!isMoving.current) return; // Tap — no action
+    if (!isMoving.current) return; // tap — no action
 
     isMoving.current = false;
 
@@ -130,7 +133,7 @@ export function ItemCard({
   }
 
   function handlePointerCancel() {
-    clearLongPress();
+    clearTimers();
     isMoving.current = false;
     isDragGesture.current = false;
     setTransitioning(true);
@@ -167,17 +170,22 @@ export function ItemCard({
 
       {/* Card */}
       <div
-        {...(dragAttributes as Record<string, unknown>)}
         style={{
-          transform: `translateX(${offset}px)`,
+          transform: `translateX(${offset}px) scale(${longPressing ? 1.04 : 1})`,
           transition: transitioning
             ? "transform 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+            : longPressing
+            ? "transform 200ms ease-out, box-shadow 200ms ease-out"
             : "none",
+          boxShadow: longPressing
+            ? "0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)"
+            : undefined,
         }}
         className={cn(
           "relative flex min-h-[60px] items-center gap-3 rounded-xl border bg-card px-4 py-3",
           "select-none touch-pan-y cursor-grab active:cursor-grabbing",
           item.checked && "opacity-70",
+          longPressing && "ring-2 ring-primary/25",
           dragOverlay && "shadow-xl ring-1 ring-black/5",
         )}
         onPointerDown={handlePointerDown}
@@ -189,6 +197,17 @@ export function ItemCard({
         tabIndex={0}
         aria-label={`${item.name}${item.quantity > 1 ? `, ${item.quantity} unidades` : ""}${item.checked ? ", comprado" : ""}`}
       >
+        {/* Grip indicator — fades in on long press, stays visible in drag overlay */}
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-150",
+            longPressing || dragOverlay ? "opacity-100" : "opacity-0",
+          )}
+          aria-hidden="true"
+        >
+          <GripVerticalIcon className="size-5 text-foreground/25" />
+        </div>
+
         <div className="min-w-0 flex-1">
           <p
             className={cn(
