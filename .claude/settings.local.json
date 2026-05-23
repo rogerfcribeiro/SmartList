@@ -29,7 +29,9 @@
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList\" -Force | Where-Object { !$_.Name.StartsWith\\(\"node_modules\"\\) } | Select-Object Name, PSIsContainer)",
       "PowerShell(New-Item *)",
       "Bash(npm ls *)",
-      "Bash(Get-ChildItem -Path C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList -Recurse -Directory)"
+      "Bash(Get-ChildItem -Path C:\\\\Users\\\\roger\\\\Documents\\\\_projetos\\\\_claude\\\\SmartList -Recurse -Directory)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(Remove-Item *)"
     ]
   }
 }

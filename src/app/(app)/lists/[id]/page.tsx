@@ -106,8 +106,12 @@ function SortableItemCard({ item, onToggle, onDelete }: SortableItemCardProps) {
     useSortable({ id: item.id });
 
   return (
+    // Listeners go on the wrapper so dnd-kit receives events via natural bubbling.
+    // ItemCard handles swipe on the inner div independently.
     <div
       ref={setNodeRef}
+      {...listeners}
+      {...attributes}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -120,8 +124,6 @@ function SortableItemCard({ item, onToggle, onDelete }: SortableItemCardProps) {
         item={item}
         onToggle={onToggle}
         onDelete={onDelete}
-        dragListeners={listeners}
-        dragAttributes={attributes as unknown as Record<string, unknown>}
       />
     </div>
   );
@@ -390,9 +392,11 @@ export default function ListDetailPage() {
 
       {/* Gesture hints — shown only when list has items */}
       {totalItems > 0 && (
-        <p className="mb-4 text-center text-xs text-muted-foreground/60">
-          ← Excluir &nbsp;·&nbsp; → Comprado &nbsp;·&nbsp; ⠿ Segurar p/ mover
-        </p>
+        <div className="mb-4 flex items-center text-xs text-muted-foreground/60">
+          <span>→ Comprado</span>
+          <span className="flex-1 text-center">⠿ Segurar p/ mover</span>
+          <span>← Excluir</span>
+        </div>
       )}
 
       {/* Items */}
