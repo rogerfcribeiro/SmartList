@@ -388,6 +388,13 @@ export default function ListDetailPage() {
         </Button>
       </div>
 
+      {/* Gesture hints — shown only when list has items */}
+      {totalItems > 0 && (
+        <p className="mb-4 text-center text-xs text-muted-foreground/60">
+          ← Excluir &nbsp;·&nbsp; → Comprado &nbsp;·&nbsp; ⠿ Segurar p/ mover
+        </p>
+      )}
+
       {/* Items */}
       {itemsLoading ? (
         <div className="space-y-2">
