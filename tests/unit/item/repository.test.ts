@@ -45,7 +45,7 @@ describe('itemRepo', () => {
       await itemRepo.findAllByList('list-1');
       expect(mockFindMany).toHaveBeenCalledWith({
         where: { listId: 'list-1' },
-        orderBy: [{ checked: 'asc' }, { createdAt: 'asc' }],
+        orderBy: [{ checked: 'asc' }, { order: 'asc' }, { createdAt: 'asc' }],
       });
     });
   });
