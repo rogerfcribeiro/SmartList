@@ -37,7 +37,6 @@ function LoginForm() {
 
     if (res.ok) {
       router.push("/lists");
-      router.refresh();
       return;
     }
 

@@ -57,7 +57,6 @@ export default function SignupPage() {
     }
 
     router.push("/lists");
-    router.refresh();
   }
 
   return (

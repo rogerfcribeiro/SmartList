@@ -62,4 +62,5 @@ export const updateItemSchema = z.object({
     .enum(['HORTIFRUTI', 'ACOUGUE', 'PADARIA', 'LIMPEZA', 'HIGIENE', 'BEBIDAS', 'OUTROS'])
     .optional(),
   checked: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
 });
