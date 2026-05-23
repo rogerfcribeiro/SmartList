@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
@@ -23,7 +24,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ItemCard, type Item } from "@/components/feature/items/item-card";
-import { ItemDrawer } from "@/components/feature/items/item-drawer";
 import type { CategoryKey } from "@/lib/categories";
 
 // ─── API ────────────────────────────────────────────────────────────────────
@@ -98,22 +98,20 @@ function makeOptimisticItem(name: string): Item {
 type SortableItemCardProps = {
   item: Item;
   onToggle: () => void;
-  onEdit: () => void;
   onDelete: () => void;
 };
 
-function SortableItemCard({ item, onToggle, onEdit, onDelete }: SortableItemCardProps) {
+function SortableItemCard({ item, onToggle, onDelete }: SortableItemCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : 1,
+        opacity: isDragging ? 0.3 : 1,
         position: "relative",
         zIndex: isDragging ? 10 : "auto",
       }}
@@ -121,9 +119,9 @@ function SortableItemCard({ item, onToggle, onEdit, onDelete }: SortableItemCard
       <ItemCard
         item={item}
         onToggle={onToggle}
-        onEdit={onEdit}
         onDelete={onDelete}
-        dragHandleListeners={listeners}
+        dragListeners={listeners}
+        dragAttributes={attributes as unknown as Record<string, unknown>}
       />
     </div>
   );
@@ -137,7 +135,6 @@ export default function ListDetailPage() {
   const queryClient = useQueryClient();
 
   const [inputValue, setInputValue] = useState("");
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [userDragOrder, setUserDragOrder] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -237,33 +234,6 @@ export default function ListDetailPage() {
     },
   });
 
-  // ── Edit item ─────────────────────────────────────────────────────────────
-
-  const editMutation = useMutation({
-    mutationFn: ({
-      itemId,
-      data,
-    }: {
-      itemId: string;
-      data: ItemUpdateData;
-    }) => apiUpdateItem(itemId, data),
-    onMutate: async ({ itemId, data }) => {
-      await queryClient.cancelQueries({ queryKey: ITEMS_KEY });
-      const previous = queryClient.getQueryData<Item[]>(ITEMS_KEY);
-      queryClient.setQueryData<Item[]>(ITEMS_KEY, (old) =>
-        old?.map((i) => (i.id === itemId ? { ...i, ...data } : i)) ?? [],
-      );
-      return { previous };
-    },
-    onError: (_, __, ctx) => {
-      queryClient.setQueryData(ITEMS_KEY, ctx?.previous);
-      toast.error("Erro ao salvar alterações. Tente novamente.");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ITEMS_KEY });
-    },
-  });
-
   // ── Delete with undo ──────────────────────────────────────────────────────
 
   function handleDeleteItem(item: Item) {
@@ -318,9 +288,16 @@ export default function ListDetailPage() {
 
   // ── Reorder ───────────────────────────────────────────────────────────────
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
+  );
+
+  const [activeItem, setActiveItem] = useState<Item | null>(null);
 
   function handleDragEnd(event: DragEndEvent) {
+    setActiveItem(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -331,7 +308,6 @@ export default function ListDetailPage() {
     const newIds = arrayMove(localPendingIds, oldIdx, newIdx);
     setUserDragOrder(newIds);
 
-    // Normalize all orders to match new positions
     newIds.forEach((itemId, idx) => {
       apiUpdateItem(itemId, { order: idx }).catch(() => {});
     });
@@ -356,13 +332,6 @@ export default function ListDetailPage() {
       e.preventDefault();
       handleAddItem();
     }
-  }
-
-  function handleSaveEdit(
-    itemId: string,
-    data: { name: string; quantity: number; category: CategoryKey },
-  ) {
-    editMutation.mutate({ itemId, data });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -444,7 +413,15 @@ export default function ListDetailPage() {
               <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Pendentes ({orderedPendingItems.length})
               </h2>
-              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+              <DndContext
+                sensors={sensors}
+                onDragStart={(event) => {
+                  const dragged = items.find((i) => i.id === event.active.id);
+                  setActiveItem(dragged ?? null);
+                }}
+                onDragEnd={handleDragEnd}
+                onDragCancel={() => setActiveItem(null)}
+              >
                 <SortableContext
                   items={localPendingIds}
                   strategy={verticalListSortingStrategy}
@@ -456,11 +433,20 @@ export default function ListDetailPage() {
                       onToggle={() =>
                         toggleMutation.mutate({ itemId: item.id, checked: true })
                       }
-                      onEdit={() => setEditingItem(item)}
                       onDelete={() => handleDeleteItem(item)}
                     />
                   ))}
                 </SortableContext>
+                <DragOverlay>
+                  {activeItem && (
+                    <ItemCard
+                      item={activeItem}
+                      onToggle={() => {}}
+                      onDelete={() => {}}
+                      dragOverlay
+                    />
+                  )}
+                </DragOverlay>
               </DndContext>
             </section>
           )}
@@ -478,7 +464,6 @@ export default function ListDetailPage() {
                   onToggle={() =>
                     toggleMutation.mutate({ itemId: item.id, checked: false })
                   }
-                  onEdit={() => setEditingItem(item)}
                   onDelete={() => handleDeleteItem(item)}
                 />
               ))}
@@ -487,13 +472,6 @@ export default function ListDetailPage() {
         </div>
       )}
 
-      {/* Edit drawer */}
-      <ItemDrawer
-        item={editingItem}
-        open={!!editingItem}
-        onOpenChange={(open) => !open && setEditingItem(null)}
-        onSave={handleSaveEdit}
-      />
     </>
   );
 }
