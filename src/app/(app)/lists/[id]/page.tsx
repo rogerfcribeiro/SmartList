@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftIcon, PackageOpenIcon, PlusIcon } from "lucide-react";
@@ -138,7 +138,7 @@ export default function ListDetailPage() {
 
   const [inputValue, setInputValue] = useState("");
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [localPendingIds, setLocalPendingIds] = useState<string[]>([]);
+  const [userDragOrder, setUserDragOrder] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // pending deletes: itemId → timeout handle
@@ -161,17 +161,16 @@ export default function ListDetailPage() {
     queryFn: () => fetchItems(id),
   });
 
-  // Sync localPendingIds from server data — preserve user reorder, drop removed, append new
-  useEffect(() => {
+  // Derive ordered pending IDs during render — preserves user drag order, drops removed, appends new
+  const localPendingIds = useMemo(() => {
     const serverPendingIds = rawItems.filter((i) => !i.checked).map((i) => i.id);
-    setLocalPendingIds((prev) => {
-      const serverSet = new Set(serverPendingIds);
-      const prevSet = new Set(prev);
-      const kept = prev.filter((id) => serverSet.has(id));
-      const added = serverPendingIds.filter((id) => !prevSet.has(id));
-      return [...kept, ...added];
-    });
-  }, [rawItems]);
+    if (userDragOrder.length === 0) return serverPendingIds;
+    const serverSet = new Set(serverPendingIds);
+    const prevSet = new Set(userDragOrder);
+    const kept = userDragOrder.filter((id) => serverSet.has(id));
+    const added = serverPendingIds.filter((id) => !prevSet.has(id));
+    return [...kept, ...added];
+  }, [rawItems, userDragOrder]);
 
   // Hide items that are in the undo-delete window
   const items = rawItems.filter((i) => !deletedIds.has(i.id));
@@ -330,7 +329,7 @@ export default function ListDetailPage() {
     if (oldIdx === -1 || newIdx === -1) return;
 
     const newIds = arrayMove(localPendingIds, oldIdx, newIdx);
-    setLocalPendingIds(newIds);
+    setUserDragOrder(newIds);
 
     // Normalize all orders to match new positions
     newIds.forEach((itemId, idx) => {
