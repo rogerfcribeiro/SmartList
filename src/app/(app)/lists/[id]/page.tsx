@@ -106,11 +106,8 @@ function SortableItemCard({ item, onToggle, onDelete }: SortableItemCardProps) {
     useSortable({ id: item.id });
 
   return (
-    // Listeners go on the wrapper so dnd-kit receives events via natural bubbling.
-    // ItemCard handles swipe on the inner div independently.
     <div
       ref={setNodeRef}
-      {...listeners}
       {...attributes}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -124,6 +121,7 @@ function SortableItemCard({ item, onToggle, onDelete }: SortableItemCardProps) {
         item={item}
         onToggle={onToggle}
         onDelete={onDelete}
+        dragHandle={listeners}
       />
     </div>
   );
@@ -292,7 +290,7 @@ export default function ListDetailPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 },
+      activationConstraint: { distance: 8 },
     }),
   );
 
@@ -394,7 +392,7 @@ export default function ListDetailPage() {
       {totalItems > 0 && (
         <div className="mb-4 flex items-center text-xs text-muted-foreground/60">
           <span>→ Comprado</span>
-          <span className="flex-1 text-center">⠿ Segurar p/ mover</span>
+          <span className="flex-1 text-center">⠿ Arrastar p/ mover</span>
           <span>← Excluir</span>
         </div>
       )}
