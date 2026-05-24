@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, ShoppingCartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -22,7 +22,7 @@ function getInitial(name?: string | null, email?: string | null) {
 
 export function AppHeader({ name, email }: Props) {
   return (
-    <header className="sticky top-0 z-10 border-b bg-background">
+    <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
@@ -30,18 +30,27 @@ export function AppHeader({ name, email }: Props) {
           </div>
           <div>
             <p className="text-xs text-muted-foreground">{getGreeting()}</p>
-            <p className="text-sm font-bold leading-tight">{name ?? email}</p>
+            <p className="text-sm font-bold leading-tight text-foreground">
+              {name ?? email}
+            </p>
           </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          aria-label="Sair da conta"
-        >
-          <LogOutIcon />
-        </Button>
+        <div className="flex items-center gap-0.5">
+          <span className="flex items-center gap-1 text-sm font-semibold text-primary">
+            <ShoppingCartIcon className="size-4" />
+            SmartList
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            aria-label="Sair da conta"
+            className="ml-1 text-muted-foreground"
+          >
+            <LogOutIcon />
+          </Button>
+        </div>
       </div>
     </header>
   );

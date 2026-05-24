@@ -25,14 +25,14 @@ export function ListCard({ list, onEdit, onDelete }: Props) {
       : 0;
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-2">
         <Link
           href={`/lists/${list.id}`}
           className="min-w-0 flex-1"
           aria-label={`Abrir lista ${list.title}`}
         >
-          <p className="truncate font-medium">{list.title}</p>
+          <p className="truncate font-semibold text-foreground">{list.title}</p>
           <p className="mt-0.5 text-sm text-muted-foreground">
             {list.checkedItems} de {list.totalItems}{" "}
             {list.totalItems === 1 ? "item" : "itens"}
@@ -40,6 +40,17 @@ export function ListCard({ list, onEdit, onDelete }: Props) {
         </Link>
 
         <div className="flex shrink-0 items-center">
+          {list.totalItems > 0 && (
+            <span
+              className={
+                pct === 100
+                  ? "mr-1 text-xs font-semibold text-primary"
+                  : "mr-1 text-xs text-muted-foreground"
+              }
+            >
+              {pct}%
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -61,10 +72,7 @@ export function ListCard({ list, onEdit, onDelete }: Props) {
 
       {list.totalItems > 0 && (
         <div className="mt-3">
-          <Progress value={pct} />
-          <p className="mt-0.5 text-right text-xs text-muted-foreground">
-            {pct}%
-          </p>
+          <Progress value={pct} className="h-1.5" />
         </div>
       )}
     </div>
