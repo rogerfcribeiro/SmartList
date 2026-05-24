@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeftIcon, PackageOpenIcon, PlusIcon } from "lucide-react";
+import { ArrowLeftIcon, PackageOpenIcon, PlusIcon, CheckIcon, Trash2Icon, GripVerticalIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -390,10 +390,19 @@ export default function ListDetailPage() {
 
       {/* Gesture hints — shown only when list has items */}
       {totalItems > 0 && (
-        <div className="mb-4 flex items-center text-xs text-muted-foreground/60">
-          <span>→ Comprado</span>
-          <span className="flex-1 text-center">⠿ Arrastar p/ mover</span>
-          <span>← Excluir</span>
+        <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground/60">
+          <span className="flex items-center gap-1">
+            <CheckIcon className="size-3 text-emerald-500" />
+            Comprado
+          </span>
+          <span className="flex items-center gap-1">
+            <GripVerticalIcon className="size-3" />
+            Mover
+          </span>
+          <span className="flex items-center gap-1">
+            Excluir
+            <Trash2Icon className="size-3 text-destructive" />
+          </span>
         </div>
       )}
 

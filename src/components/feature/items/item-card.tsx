@@ -176,7 +176,7 @@ export function ItemCard({ item, onToggle, onDelete, dragOverlay = false, dragHa
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              "truncate text-sm font-medium leading-tight",
+              "truncate text-sm font-medium leading-tight text-foreground",
               item.checked && "text-muted-foreground line-through",
             )}
           >
