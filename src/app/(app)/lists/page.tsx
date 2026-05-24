@@ -158,23 +158,30 @@ export default function ListsPage() {
           </div>
         ) : lists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ShoppingCartIcon className="mb-4 size-12 text-muted-foreground/40" />
-            <p className="text-base font-medium text-muted-foreground">
+            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+              <ShoppingCartIcon className="size-9 text-primary/70" />
+            </div>
+            <p className="text-base font-semibold text-foreground">
               Nenhuma lista ainda
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Toque no botão + para criar sua primeira lista.
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {lists.map((list) => (
-              <ListCard
+            {lists.map((list, index) => (
+              <div
                 key={list.id}
-                list={list}
-                onEdit={() => setEditingList(list)}
-                onDelete={() => setDeletingList(list)}
-              />
+                className="animate-in fade-in slide-in-from-bottom-3 fill-mode-both duration-300"
+                style={{ animationDelay: `${index * 60}ms` }}
+              >
+                <ListCard
+                  list={list}
+                  onEdit={() => setEditingList(list)}
+                  onDelete={() => setDeletingList(list)}
+                />
+              </div>
             ))}
           </div>
         )}

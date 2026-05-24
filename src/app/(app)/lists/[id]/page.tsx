@@ -417,11 +417,12 @@ export default function ListDetailPage() {
           ))}
         </div>
       ) : totalItems === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <PackageOpenIcon className="mb-3 size-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">
-            Nenhum item ainda. Adicione acima.
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-in fade-in duration-300">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <PackageOpenIcon className="size-7 text-primary/60" />
+          </div>
+          <p className="text-sm font-medium text-foreground">Nenhum item ainda.</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">Adicione acima.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -444,15 +445,20 @@ export default function ListDetailPage() {
                   items={localPendingIds}
                   strategy={verticalListSortingStrategy}
                 >
-                  {orderedPendingItems.map((item) => (
-                    <SortableItemCard
+                  {orderedPendingItems.map((item, index) => (
+                    <div
                       key={item.id}
-                      item={item}
-                      onToggle={() =>
-                        toggleMutation.mutate({ itemId: item.id, checked: true })
-                      }
-                      onDelete={() => handleDeleteItem(item)}
-                    />
+                      className="animate-in fade-in fill-mode-both duration-200"
+                      style={{ animationDelay: `${index * 40}ms` }}
+                    >
+                      <SortableItemCard
+                        item={item}
+                        onToggle={() =>
+                          toggleMutation.mutate({ itemId: item.id, checked: true })
+                        }
+                        onDelete={() => handleDeleteItem(item)}
+                      />
+                    </div>
                   ))}
                 </SortableContext>
                 <DragOverlay>
@@ -475,15 +481,20 @@ export default function ListDetailPage() {
               <h2 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Comprados ({checkedItems.length})
               </h2>
-              {checkedItems.map((item) => (
-                <ItemCard
+              {checkedItems.map((item, index) => (
+                <div
                   key={item.id}
-                  item={item}
-                  onToggle={() =>
-                    toggleMutation.mutate({ itemId: item.id, checked: false })
-                  }
-                  onDelete={() => handleDeleteItem(item)}
-                />
+                  className="animate-in fade-in fill-mode-both duration-200"
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
+                  <ItemCard
+                    item={item}
+                    onToggle={() =>
+                      toggleMutation.mutate({ itemId: item.id, checked: false })
+                    }
+                    onDelete={() => handleDeleteItem(item)}
+                  />
+                </div>
               ))}
             </section>
           )}
